@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>JSMpeg Stream Client</title>
+	<style type="text/css">
+		html, body {
+			text-align: center;
+		}
+	</style>
+
+</head>
+<body>
+	<canvas id="video-canvas"></canvas>
+
+	<canvas id="video-canvas1"></canvas>
+
+	<script type="text/javascript" src="jsmpeg.min.js"></script>
+	<script type="text/javascript">
+		var canvas = document.getElementById('video-canvas');
+		var url = 'ws://127.0.0.1:3000/stream/live/5b96bff4-bdb2-3edb-9d6e-f96eda03da56';
+		var player = new JSMpeg.Player(url, {canvas: canvas});
+
+
+		var canvas1 = document.getElementById('video-canvas1');
+		var url1 = 'ws://127.0.0.1:3000/stream/live/5b96bff4-bdb2-3edb-9d6e-f96eda03da56';
+		var player1 = new JSMpeg.Player(url1, {canvas: canvas1});
+
+	</script>
+</body>
+</html>
