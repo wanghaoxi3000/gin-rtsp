@@ -44,7 +44,7 @@ POST /stream/play
 ffmpeg -rtsp_transport tcp -re -i 'rtsp://admin:password@192.168.3.10:554/cam/realmonitor?channel=1&subtype=0' -q 0 -f mpegts -c:v mpeg1video -an -s 960x540 http://127.0.0.1:3000/stream/upload/test
 ```
 
-通过如上命令，运行之后在view-stream.html文件的url中填入对应的地址为/stream/upload/test，在浏览器中打开查看视频。
+通过如上命令，运行之后在view-stream.html文件的url中填入对应的地址为`/stream/live/test`，在浏览器中打开查看视频。
 
 
 显示效果
