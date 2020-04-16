@@ -6,12 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 自定义错误
-const (
-	ErrorFFMPEGStart = 5001	// FFMPEG 启动失败
-)
-
-
 // Response 基础序列化器
 type Response struct {
 	Code  int         `json:"code"`
