@@ -42,7 +42,7 @@ func (service *RTSPTransSrv) Service() *serializer.Response {
 	} else {
 		reflush := make(chan int)
 		if cmd, stdin, err := runFFMPEG(service.URL, processCh); err != nil {
-			return serializer.Err(serializer.ErrorFFMPEGStart, err.Error(), err)
+			return serializer.Err(400, err.Error(), err)
 		} else {
 			go keepFFMPEG(cmd, stdin, &reflush, processCh)
 		}
@@ -69,7 +69,7 @@ func keepFFMPEG(cmd *exec.Cmd, stdin io.WriteCloser, ch *chan int, playCh string
 			_, _ = stdin.Write([]byte("q"))
 			err := cmd.Wait()
 			if err != nil {
-				util.Log().Error("Run ffmpeg err", err.Error())
+				util.Log().Error("Run ffmpeg err %v", err.Error())
 			}
 			return
 		}
@@ -81,6 +81,8 @@ func runFFMPEG(rtsp string, playCh string) (*exec.Cmd, io.WriteCloser, error) {
 		"-rtsp_transport",
 		"tcp",
 		"-re",
+		"-timeout",
+		"5",
 		"-i",
 		rtsp,
 		"-q",
@@ -97,12 +99,13 @@ func runFFMPEG(rtsp string, playCh string) (*exec.Cmd, io.WriteCloser, error) {
 		fmt.Sprintf("http://127.0.0.1:3000/stream/upload/%s", playCh),
 	}
 
+	util.Log().Debug("FFmpeg cmd: ffmpeg %v", strings.Join(params, " "))
 	cmd := exec.Command("ffmpeg", params...)
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
-		util.Log().Error("Get ffmpeg stdin err:%v", err)
+		util.Log().Error("Get ffmpeg stdin err:%v", err.Error())
 		return nil, nil, errors.New("拉流进程启动失败")
 	}
 
