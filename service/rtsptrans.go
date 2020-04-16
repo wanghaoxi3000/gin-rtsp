@@ -1,10 +1,11 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"ginrtsp/serializer"
-
 	"ginrtsp/util"
+	"io"
 	"os/exec"
 	"strings"
 	"sync"
@@ -40,20 +41,42 @@ func (service *RTSPTransSrv) Service() *serializer.Response {
 		*ch.(*chan int) <- 1
 	} else {
 		reflush := make(chan int)
-		go runFFMPEG(service.URL, processCh, &reflush)
+		if cmd, stdin, err := runFFMPEG(service.URL, processCh); err != nil {
+			return serializer.Err(serializer.ErrorFFMPEGStart, err.Error(), err)
+		} else {
+			go keepFFMPEG(cmd, stdin, &reflush, processCh)
+		}
 	}
 
 	playURL := fmt.Sprintf("/stream/live/%s", processCh)
 	return serializer.BuildRTSPPlayPathResponse(playURL)
 }
 
-func runFFMPEG(rtsp string, playCh string, ch *chan int) {
+func keepFFMPEG(cmd *exec.Cmd, stdin io.WriteCloser, ch *chan int, playCh string) {
 	processMap.Store(playCh, ch)
 	defer func() {
 		processMap.Delete(playCh)
-		util.Log().Info("Stop translate rtsp %v", rtsp)
+		_ = stdin.Close()
+		util.Log().Info("Stop translate rtsp id %v", playCh)
 	}()
 
+	for {
+		select {
+		case <-*ch:
+			util.Log().Info("Reflush channel %s", playCh)
+
+		case <-time.After(60 * time.Second):
+			_, _ = stdin.Write([]byte("q"))
+			err := cmd.Wait()
+			if err != nil {
+				util.Log().Error("Run ffmpeg err", err.Error())
+			}
+			return
+		}
+	}
+}
+
+func runFFMPEG(rtsp string, playCh string) (*exec.Cmd, io.WriteCloser, error) {
 	params := []string{
 		"-rtsp_transport",
 		"tcp",
@@ -80,29 +103,14 @@ func runFFMPEG(rtsp string, playCh string, ch *chan int) {
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		util.Log().Error("Get ffmpeg stdin err:%v", err)
-		return
+		return nil, nil, errors.New("拉流进程启动失败")
 	}
-	defer stdin.Close()
 
 	err = cmd.Start()
 	if err != nil {
-		util.Log().Error("Start ffmpeg err:%v", err.Error)
-		return
+		util.Log().Info("Start ffmpeg err: %v", err.Error())
+		return nil, nil, errors.New("打开摄像头视频流失败")
 	}
 	util.Log().Info("Translate rtsp %v to %v", rtsp, playCh)
-
-	for {
-		select {
-		case <-*ch:
-			util.Log().Info("reflush channel %s rtsp %v", playCh, rtsp)
-
-		case <-time.After(60 * time.Second):
-			stdin.Write([]byte("q"))
-			err = cmd.Wait()
-			if err != nil {
-				util.Log().Error("Run ffmpeg err:%v", err.Error)
-			}
-			return
-		}
-	}
+	return cmd, stdin, nil
 }
