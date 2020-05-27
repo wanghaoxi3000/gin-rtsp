@@ -1,5 +1,5 @@
 # gin-rtsp
-基于[**JSMpeg**](https://github.com/phoboslab/jsmpeg/)的原理，在HTML页面上直接播放RTSP视频流，使用Gin框架开发。
+基于 [**JSMpeg**](https://github.com/phoboslab/jsmpeg/) 的原理，在HTML页面上直接播放RTSP视频流，使用Gin框架开发。
 
 ## 主要模块
 - API 接口：接收FFMPEG的推流数据和客户端的HTTP请求，将客户端需要播放的RTSP地址转换为一个对应的WebSocket地址，客户端通过这个WebSocket地址便可以直接播放视频，为了及时释放不再观看的视频流，这里设计为客户端播放时需要在每隔60秒的时间里循环请求这个接口，超过指定时间没有收到请求的话后台便会关闭这个视频流。
@@ -8,6 +8,8 @@
 
 - WebSocket Manager：管理WebSocket客户端，将请求同一WebSocket地址的客户端添加到一个Group中，向各个Group广播对应的RTSP视频流，删除Group中已断开连接的客户端，释放空闲的Group。
 
+## 注意
+- 需要摄像头的码流为H264码流
 
 ## 测试
 项目需要运行在安装有FFMPEG程序的环境中。通过编写了一份Dockerfile已经封装好了需要的环境，可以使用Docker build后，以Docker的方式运行。
