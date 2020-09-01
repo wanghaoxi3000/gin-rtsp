@@ -29,7 +29,7 @@ func Mpeg1Video(c *gin.Context) {
 			break
 		}
 
-		service.WsManager.GroupBoardcast(c.Param("channel"), data)
+		service.WsManager.Groupbroadcast(c.Param("channel"), data)
 	}
 }
 
