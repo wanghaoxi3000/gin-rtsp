@@ -14,7 +14,7 @@ var WsManager = clientManager{
 	clientGroup: make(map[string]map[string]*wsClient),
 	register:    make(chan *wsClient),
 	unRegister:  make(chan *wsClient),
-	boardcast:   make(chan *boradcastData, 10),
+	broadcast:   make(chan *boradcastData, 10),
 }
 
 // ClientManager websocket client Manager struct
@@ -22,7 +22,7 @@ type clientManager struct {
 	clientGroup map[string]map[string]*wsClient
 	register    chan *wsClient
 	unRegister  chan *wsClient
-	boardcast   chan *boradcastData
+	broadcast   chan *boradcastData
 }
 
 // boradcastData 广播数据
@@ -99,7 +99,7 @@ func (manager *clientManager) Start() {
 				}
 			}
 
-		case data := <-manager.boardcast:
+		case data := <-manager.broadcast:
 			if groupMap, ok := manager.clientGroup[data.GroupID]; ok {
 				for _, conn := range groupMap {
 					conn.Send <- data.Data
@@ -138,11 +138,11 @@ func (manager *clientManager) RegisterClient(ctx *gin.Context) {
 	go client.Write()
 }
 
-// GroupBoardcast 向指定的 Group 广播
-func (manager *clientManager) GroupBoardcast(group string, message []byte) {
+// Groupbroadcast 向指定的 Group 广播
+func (manager *clientManager) Groupbroadcast(group string, message []byte) {
 	data := &boradcastData{
 		GroupID: group,
 		Data:    message,
 	}
-	manager.boardcast <- data
+	manager.broadcast <- data
 }
