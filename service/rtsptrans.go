@@ -38,9 +38,9 @@ func (service *RTSPTransSrv) Service() *serializer.Response {
 	// 多个客户端需要播放相同的RTSP流地址时，保证返回WebSocket地址相同
 	processCh := uuid.NewV3(uuid.NamespaceURL, simpleString).String()
 	if ch, ok := processMap.Load(processCh); ok {
-		*ch.(*chan int) <- 1
+		*ch.(*chan struct{}) <- struct{}{}
 	} else {
-		reflush := make(chan int)
+		reflush := make(chan struct{})
 		if cmd, stdin, err := runFFMPEG(service.URL, processCh); err != nil {
 			return serializer.Err(400, err.Error(), err)
 		} else {
@@ -52,10 +52,11 @@ func (service *RTSPTransSrv) Service() *serializer.Response {
 	return serializer.BuildRTSPPlayPathResponse(playURL)
 }
 
-func keepFFMPEG(cmd *exec.Cmd, stdin io.WriteCloser, ch *chan int, playCh string) {
+func keepFFMPEG(cmd *exec.Cmd, stdin io.WriteCloser, ch *chan struct{}, playCh string) {
 	processMap.Store(playCh, ch)
 	defer func() {
 		processMap.Delete(playCh)
+		close(*ch)
 		_ = stdin.Close()
 		util.Log().Info("Stop translate rtsp id %v", playCh)
 	}()
