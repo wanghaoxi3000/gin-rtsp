@@ -36,7 +36,7 @@ func (service *RTSPTransSrv) Service() *serializer.Response {
 	}
 
 	// 多个客户端需要播放相同的RTSP流地址时，保证返回WebSocket地址相同
-	processCh := uuid.NewV3(uuid.NamespaceURL, simpleString).String()
+	processCh := uuid.NewV3(uuid.NamespaceURL, splitList[1]).String()
 	if ch, ok := processMap.Load(processCh); ok {
 		*ch.(*chan int) <- 1
 	} else {
@@ -81,6 +81,8 @@ func runFFMPEG(rtsp string, playCh string) (*exec.Cmd, io.WriteCloser, error) {
 		"-rtsp_transport",
 		"tcp",
 		"-re",
+		// "-timeout",
+		// "5",
 		"-i",
 		rtsp,
 		"-q",
