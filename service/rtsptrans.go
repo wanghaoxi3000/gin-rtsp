@@ -34,9 +34,11 @@ func (service *RTSPTransSrv) Service() *serializer.Response {
 			Msg:  "不是有效的 RTSP 地址",
 		}
 	}
-
+	// fmt.Println("simpleString", simpleString)
+	// fmt.Println("splitList: ", splitList)
 	// 多个客户端需要播放相同的RTSP流地址时，保证返回WebSocket地址相同
-	processCh := uuid.NewV3(uuid.NamespaceURL, splitList[1]).String()
+	// 为了支持同一IP多路摄像头，使用simpleString作为hash参数，而不是splitList[1]
+	processCh := uuid.NewV3(uuid.NamespaceURL, simpleString).String()
 	if ch, ok := processMap.Load(processCh); ok {
 		*ch.(*chan int) <- 1
 	} else {
