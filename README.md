@@ -55,3 +55,8 @@ ffmpeg -rtsp_transport tcp -re -i 'rtsp://admin:password@192.168.3.10:554/cam/re
 
 ## 参考
 [JSMpeg – MPEG1 Video & MP2 Audio Decoder in JavaScript](https://github.com/phoboslab/jsmpeg/)
+
+# 环境变量
+RTSP_PORT 默认为3000
+RTSP_CORS 默认为false 
+设置为true时跨域，其他不跨域
