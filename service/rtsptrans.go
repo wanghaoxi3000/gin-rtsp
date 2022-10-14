@@ -6,6 +6,7 @@ import (
 	"ginrtsp/serializer"
 	"ginrtsp/util"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -79,6 +80,10 @@ func keepFFMPEG(cmd *exec.Cmd, stdin io.WriteCloser, ch *chan int, playCh string
 }
 
 func runFFMPEG(rtsp string, playCh string) (*exec.Cmd, io.WriteCloser, error) {
+	port := "3000"
+	if len(os.Getenv("RTSP_PORT")) > 0 {
+		port = os.Getenv("RTSP_PORT")
+	}
 	params := []string{
 		"-rtsp_transport",
 		"tcp",
@@ -98,7 +103,7 @@ func runFFMPEG(rtsp string, playCh string) (*exec.Cmd, io.WriteCloser, error) {
 		"-an",
 		"-s",
 		"960x540",
-		fmt.Sprintf("http://127.0.0.1:3000/stream/upload/%s", playCh),
+		fmt.Sprintf("http://127.0.0.1:%s/stream/upload/%s", port, playCh),
 	}
 
 	util.Log().Debug("FFmpeg cmd: ffmpeg %v", strings.Join(params, " "))
