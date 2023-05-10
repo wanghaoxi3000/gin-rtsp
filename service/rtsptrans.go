@@ -6,6 +6,7 @@ import (
 	"ginrtsp/serializer"
 	"ginrtsp/util"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -34,8 +35,10 @@ func (service *RTSPTransSrv) Service() *serializer.Response {
 			Msg:  "不是有效的 RTSP 地址",
 		}
 	}
-
+	// fmt.Println("simpleString", simpleString)
+	// fmt.Println("splitList: ", splitList)
 	// 多个客户端需要播放相同的RTSP流地址时，保证返回WebSocket地址相同
+	// 为了支持同一IP多路摄像头，使用simpleString作为hash参数，而不是splitList[1]
 	processCh := uuid.NewV3(uuid.NamespaceURL, simpleString).String()
 	if ch, ok := processMap.Load(processCh); ok {
 		*ch.(*chan struct{}) <- struct{}{}
@@ -78,10 +81,16 @@ func keepFFMPEG(cmd *exec.Cmd, stdin io.WriteCloser, ch *chan struct{}, playCh s
 }
 
 func runFFMPEG(rtsp string, playCh string) (*exec.Cmd, io.WriteCloser, error) {
+	port := "3000"
+	if len(os.Getenv("RTSP_PORT")) > 0 {
+		port = os.Getenv("RTSP_PORT")
+	}
 	params := []string{
 		"-rtsp_transport",
 		"tcp",
 		"-re",
+		"-stimeout",
+		"5000000",
 		"-i",
 		rtsp,
 		"-q",
@@ -95,7 +104,7 @@ func runFFMPEG(rtsp string, playCh string) (*exec.Cmd, io.WriteCloser, error) {
 		"-an",
 		"-s",
 		"960x540",
-		fmt.Sprintf("http://127.0.0.1:3000/stream/upload/%s", playCh),
+		fmt.Sprintf("http://127.0.0.1:%s/stream/upload/%s", port, playCh),
 	}
 
 	util.Log().Debug("FFmpeg cmd: ffmpeg %v", strings.Join(params, " "))
