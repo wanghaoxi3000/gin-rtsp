@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>JSMpeg Stream Client</title>
+	<style type="text/css">
+		html, body {
+			text-align: center;
+		}
+	</style>
+
+</head>
+<body>
+
+	<div>	<canvas id="video-canvas" style="height:200px"></canvas></div>
+	<div>	<canvas id="video-canvas1" style="height:200px"></canvas></div>
+	<script type="text/javascript" src="jsmpeg.min.js"></script>
+	<script type="text/javascript">
+
+		const HOST = 'http://192.168.90.21:3000'
+		const URL = 'ws://192.168.90.21:3000/stream/live/'
+		const BASE_URL = `${HOST}/stream/play`
+		const time = 1000 * 30
+
+		const rtspURLS = {
+			'rtsp://admin:password@192.168.90.100:554/Streaming/Channels/101': {old: '', canvas: document.getElementById('video-canvas'), player: null},
+			'rtsp://admin:password@192.168.90.101:554/Streaming/Channels/1001': {old: '', canvas: document.getElementById('video-canvas1'), player: null},
+		}
+
+		const getURLHash = async function (url) {
+			const body = JSON.stringify({
+				'url': url
+			})
+			const headers = {
+				'Content-Type': 'application/json; charset=utf-8'
+			}
+			const init = {
+				method: 'POST',
+				headers: headers,
+				body: body,
+			}
+			return await fetch(BASE_URL, init).then(response => response.text())
+		}
+
+		const init = function (hash, url, info) {
+			const canvas = info.canvas
+			if (info.old === hash) {
+				return 
+			}
+			info.old = hash
+			if (info.player) {
+				info.player.destroy()
+			}
+			info.player = new JSMpeg.Player(URL + hash, {canvas: canvas})
+		}
+
+		
+		const createPlayer = function () {
+			const keys = Object.keys(rtspURLS)
+			keys.forEach((rtspURL, index) => {
+				const info = rtspURLS[rtspURL]
+				getURLHash(rtspURL)
+					.then(response => {
+						const data = JSON.parse(response)
+						const array = data.data.path.split('/')
+						const hash = array[array.length - 1]
+						init(hash, rtspURL, info)
+					})
+			})
+		}
+
+		createPlayer()
+		setInterval(createPlayer, time)
+
+	</script>
+</body>
+</html>
