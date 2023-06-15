@@ -1,20 +1,9 @@
-FROM ubuntu:18.04 as builder
+FROM golang:1.20-alpine as builder
 
-ENV APP_DIR=/go/src
-ENV GO_VERSION=1.13.3
-ENV GO111MODULE=on
-ENV GOPROXY=https://goproxy.io
-
-COPY . ${APP_DIR}
-WORKDIR ${APP_DIR}
-
-RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list \
-    && sed -i 's/security.ubuntu.com/mirrors.aliyun.com/g'  /etc/apt/sources.list \
-    && apt-get update \
-    && apt-get install -y wget\
-    && wget -nv https://dl.google.com/go/go${GO_VERSION}.linux-amd64.tar.gz \
-    && tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz \
-    && export PATH=$PATH:/usr/local/go/bin \
+COPY . /app
+WORKDIR /app
+ENV CGO_ENABLED=0
+RUN go env -w GOPROXY=https://goproxy.cn,direct \
     && go build -o gin-rtsp
 
 
@@ -33,7 +22,7 @@ RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list \
     && apt-get clean && apt-get autoclean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 
-COPY --from=builder /go/src/gin-rtsp /usr/local/bin/gin-rtsp
+COPY --from=builder /app/gin-rtsp /usr/local/bin/gin-rtsp
 
 EXPOSE 3000
 
